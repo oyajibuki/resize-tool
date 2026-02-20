@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>resize.tool</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #fff;
+      --border: #e0ddd6;
+      --border-s: #b8b4ac;
+      --text: #1a1916;
+      --muted: #7a7872;
+      --al: #f0ede6;
+      --green: #2d7a4f;
+      --green-bg: #e8f5ee;
+      --red: #c0392b;
+      --red-bg: #fde8e8;
+      --violet: #6c63ff;
+      --violet-bg: #f0eeff;
+      --orange: #c85a0a;
+      --orange-bg: #fff3e8;
+      --ybg: #fff8e0;
+      --ytxt: #7a5c00;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans JP', sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 64px;
+    }
+
+    header {
+      max-width: 920px;
+      margin: 0 auto 28px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      border-bottom: 2px solid var(--text);
+      padding-bottom: 12px;
+    }
+
+    header h1 {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    header span {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .slabel {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* Drop */
+    .dz {
+      border: 2px dashed var(--border-s);
+      border-radius: 6px;
+      background: var(--al);
+      padding: 42px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+      position: relative;
+    }
+
+    .dz:hover,
+    .dz.over {
+      border-color: var(--text);
+      background: #ebe8e0;
+    }
+
+    .dz input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dz-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .dz-text {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .dz-text strong {
+      color: var(--text);
+    }
+
+    .dz-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      font-family: var(--mono);
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 2px 6px;
+      margin: 2px;
+      font-size: 11px;
+    }
+
+    .tag.heic {
+      background: var(--orange-bg);
+      border-color: #e8a060;
+      color: var(--orange);
+    }
+
+    /* Notice */
+    .notice {
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.orange {
+      background: var(--orange-bg);
+      border: 1.5px solid #e8a060;
+      color: var(--orange);
+    }
+
+    .notice.yellow {
+      background: var(--ybg);
+      border: 1.5px solid #ffe08a;
+      color: var(--ytxt);
+    }
+
+    .notice.green {
+      background: var(--green-bg);
+      border: 1.5px solid #8bc9a0;
+      color: var(--green);
+    }
+
+    .notice.red {
+      background: var(--red-bg);
+      border: 1.5px solid #f0a0a0;
+      color: var(--red);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .tab {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all .1s;
+      color: var(--muted);
+    }
+
+    .tab:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    .tab.active {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+
+    /* Presets */
+    .pgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 8px;
+    }
+
+    .pc {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      background: var(--surface);
+      transition: all .1s;
+    }
+
+    .pc:hover {
+      border-color: var(--text);
+    }
+
+    .pc.sel {
+      border-color: var(--text);
+      background: var(--al);
+    }
+
+    .pc.vid {
+      border-left: 3px solid var(--violet);
+    }
+
+    .pc.vid.sel {
+      background: var(--violet-bg);
+    }
+
+    .pp {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .pn {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      margin: 2px 0;
+    }
+
+    .ps {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pb {
+      font-size: 10px;
+      font-family: var(--mono);
+      margin-top: 4px;
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .pb.v {
+      background: var(--violet-bg);
+      color: var(--violet);
+    }
+
+    /* Options */
+    .opts {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .og {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .ol {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .cr {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .xl {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type=number] {
+      font-family: var(--mono);
+      font-size: 14px;
+      width: 86px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 9px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    input[type=number]:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    select {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    input[type=color] {
+      border: 1.5px solid var(--border);
+      border-radius: 3px;
+      width: 32px;
+      height: 28px;
+      cursor: pointer;
+      padding: 2px;
+    }
+
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chk input {
+      accent-color: var(--text);
+      width: 15px;
+      height: 15px;
+    }
+
+    /* Video fmt */
+    .vfmt {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .vb {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--muted);
+      transition: all .1s;
+    }
+
+    .vb:hover:not(:disabled) {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    .vb.active {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+
+    .vb:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    /* Preview */
+    .prevgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width:540px) {
+      .prevgrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pbox {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      padding: 12px;
+    }
+
+    .pbox-lbl {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .pbox canvas,
+    .pbox video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 3px;
+      background: #e8e6e0;
+      max-height: 260px;
+      object-fit: contain;
+    }
+
+    .pinfo {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 7px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Status */
+    .sbar {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .sbar.show {
+      display: block;
+    }
+
+    .sbar.proc {
+      background: var(--ybg);
+      color: var(--ytxt);
+    }
+
+    .sbar.done {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .sbar.err {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .pgwrap {
+      display: none;
+      margin-bottom: 12px;
+    }
+
+    .pgwrap.show {
+      display: block;
+    }
+
+    .pglbl {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    progress {
+      width: 100%;
+      height: 6px;
+      border: none;
+      border-radius: 3px;
+      accent-color: var(--text);
+    }
+
+    /* Buttons */
+    .brow {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-p {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 22px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity .1s;
+    }
+
+    .btn-p:hover {
+      opacity: .85;
+    }
+
+    .btn-p:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    .btn-s {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 11px 16px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid var(--border-s);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-s:hover {
+      border-color: var(--text);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>resize.tool</h1>
+    <span>画像・動画リサイザー — ブラウザ完結 / サーバー不要</span>
+  </header>
+
+  <div class="wrap">
+
+    <!-- 01 -->
+    <div class="card">
+      <div class="slabel">01 — ファイルを選択</div>
+      <div class="dz" id="dz">
+        <input type="file" id="fi" accept="image/*,.heic,.heif,video/*">
+        <div class="dz-icon">📁</div>
+        <div class="dz-text"><strong>クリックまたはドラッグ</strong>でファイルを選択</div>
+        <div class="dz-sub">
+          <span class="tag">PNG</span><span class="tag">JPG</span><span class="tag">WebP</span><span
+            class="tag">GIF</span>
+          <span class="tag heic">📱 HEIC / HEIF（iPhone）</span>
+          <span class="tag">MP4</span><span class="tag">MOV</span><span class="tag">WebM</span>
+        </div>
+      </div>
+      <div class="notice orange" id="heicNotice">📱 iPhoneの写真（HEIC/HEIF）を検出 — JPG または PNG に変換します</div>
+      <div class="notice red" id="errNotice"></div>
+    </div>
+
+    <!-- 02 プリセット -->
+    <div class="card" id="secPreset" style="display:none">
+      <div class="slabel">02 — 用途を選択（任意）</div>
+      <div class="tabs" id="platTabs">
+        <button class="tab active" data-p="all">すべて</button>
+        <button class="tab" data-p="booth">BOOTH</button>
+        <button class="tab" data-p="note">note</button>
+        <button class="tab" data-p="youtube">YouTube</button>
+        <button class="tab" data-p="tiktok">TikTok</button>
+        <button class="tab" data-p="twitter">Twitter/X</button>
+        <button class="tab" data-p="instagram">Instagram</button>
+        <button class="tab" data-p="facebook">Facebook</button>
+      </div>
+      <div class="pgrid" id="presetGrid"></div>
+    </div>
+
+    <!-- 03 オプション -->
+    <div class="card" id="secOpts" style="display:none">
+      <div class="slabel">03 — サイズ / 出力設定</div>
+
+      <!-- 動画フォーマット -->
+      <div id="vfmtSec" style="display:none">
+        <div class="ol" style="margin-bottom:8px;">動画出力フォーマット</div>
+        <div class="vfmt">
+          <button class="vb active" id="vbMp4" data-vf="mp4">MP4（H.264）</button>
+          <button class="vb" id="vbWebm" data-vf="webm">WebM（VP9）</button>
+        </div>
+        <div class="notice yellow show" id="mp4Warn" style="display:none">⚠ このブラウザはMP4エンコード非対応です。WebMをお使いください。</div>
+        <hr>
+      </div>
+
+      <!-- HEIC変換先 -->
+      <div id="heicFmtSec" style="display:none; margin-bottom:14px;">
+        <div class="ol" style="margin-bottom:6px;">変換先フォーマット</div>
+        <select id="heicFmt">
+          <option value="image/jpeg">JPG（推奨）</option>
+          <option value="image/png">PNG</option>
+        </select>
+        <hr style="margin-top:12px;">
+      </div>
+
+      <div class="opts">
+        <div class="og">
+          <div class="ol">カスタムサイズ（px）</div>
+          <div class="cr">
+            <input type="number" id="cw" placeholder="幅" min="1" max="7680">
+            <span class="xl">×</span>
+            <input type="number" id="ch" placeholder="高さ" min="1" max="7680">
+          </div>
+        </div>
+        <div class="og" id="imgFmtGrp">
+          <div class="ol">出力フォーマット</div>
+          <select id="fmt">
+            <option value="image/png">PNG</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/webp">WebP</option>
+          </select>
+        </div>
+        <div class="og" id="qualGrp" style="display:none">
+          <div class="ol">品質</div>
+          <select id="qual">
+            <option value="1">最高 (100%)</option>
+            <option value="0.9" selected>高 (90%)</option>
+            <option value="0.75">中 (75%)</option>
+            <option value="0.6">低 (60%)</option>
+          </select>
+        </div>
+        <div class="og" id="trimGrp" style="display:none">
+          <div class="ol">切り出し時間（秒）</div>
+          <div class="cr">
+            <input type="number" id="targStart" placeholder="開始" min="0" step="0.1">
+            <span class="xl">〜</span>
+            <input type="number" id="targEnd" placeholder="終了" min="0.1" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+        <label class="chk"><input type="checkbox" id="ka" checked> アスペクト比を維持</label>
+        <label class="chk"><input type="checkbox" id="fb" checked> 余白を塗りつぶし</label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted);">背景色</span>
+          <input type="color" id="bgc" value="#ffffff">
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 プレビュー & DL -->
+    <div class="card" id="secPrev" style="display:none">
+      <div class="slabel">04 — プレビュー & ダウンロード</div>
+      <div class="prevgrid">
+        <div class="pbox">
+          <div class="pbox-lbl">元ファイル</div>
+          <canvas id="origC" style="display:none"></canvas>
+          <video id="origV" controls muted style="display:none"></video>
+          <div class="pinfo" id="origI"></div>
+        </div>
+        <div class="pbox">
+          <div class="pbox-lbl">変換後</div>
+          <canvas id="resC" style="display:none"></canvas>
+          <video id="resV" controls style="display:none"></video>
+          <div class="pinfo" id="resI"></div>
+        </div>
+      </div>
+      <div class="sbar" id="sbar"></div>
+      <div class="pgwrap" id="pgwrap">
+        <div class="pglbl" id="pglbl">処理中...</div>
+        <progress id="pgbar" value="0" max="100"></progress>
+      </div>
+      <div class="brow">
+        <button class="btn-p" id="dlBtn" disabled>⬇ ダウンロード</button>
+        <button class="btn-s" id="resetBtn">やり直す</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    // ===== WebCodecs / mp4-muxer チェック =====
+    const hasWebCodecs = typeof VideoEncoder !== 'undefined';
+    let mp4MuxerLib = null; // 後で動的ロード
+
+    // mp4-muxerを<script>タグで動的ロードする
+    async function loadMp4Muxer() {
+      if (mp4MuxerLib) return mp4MuxerLib;
+      if (typeof Mp4Muxer !== 'undefined') { mp4MuxerLib = Mp4Muxer; return Mp4Muxer; }
+      const URLS = [
+        'https://cdn.jsdelivr.net/npm/mp4-muxer/build/mp4-muxer.min.js',
+        'https://unpkg.com/mp4-muxer/build/mp4-muxer.min.js',
+      ];
+      for (const url of URLS) {
+        try {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+          if (typeof Mp4Muxer !== 'undefined') {
+            mp4MuxerLib = Mp4Muxer;
+            return Mp4Muxer;
+          }
+        } catch (e) { console.warn('mp4-muxer load failed:', url, e); }
+      }
+      return null;
+    }
+
+    // ===== プリセット =====
+    const PRESETS = [
+      { pl: 'booth', name: 'アイコン', w: 600, h: 600, vt: 'image' },
+      { pl: 'booth', name: 'バナー', w: 1500, h: 400, vt: 'image' },
+      { pl: 'booth', name: '商品画像', w: 1200, h: 1200, vt: 'image' },
+      { pl: 'note', name: 'アイコン', w: 500, h: 500, vt: 'image' },
+      { pl: 'note', name: 'ヘッダー', w: 1280, h: 670, vt: 'image' },
+      { pl: 'note', name: '記事サムネ', w: 1280, h: 670, vt: 'image' },
+      { pl: 'youtube', name: 'サムネイル', w: 1280, h: 720, vt: 'image' },
+      { pl: 'youtube', name: 'チャンネルアイコン', w: 800, h: 800, vt: 'image' },
+      { pl: 'youtube', name: 'チャンネルアート', w: 2560, h: 1440, vt: 'image' },
+      { pl: 'youtube', name: '動画（横）', w: 1920, h: 1080, vt: 'video', note: '16:9' },
+      { pl: 'youtube', name: 'Shorts（縦）', w: 1080, h: 1920, vt: 'video', note: '9:16' },
+      { pl: 'tiktok', name: '縦動画', w: 1080, h: 1920, vt: 'video', note: '9:16' },
+      { pl: 'tiktok', name: 'アイコン', w: 200, h: 200, vt: 'image' },
+      { pl: 'twitter', name: 'アイコン', w: 400, h: 400, vt: 'image' },
+      { pl: 'twitter', name: 'ヘッダー', w: 1500, h: 500, vt: 'image' },
+      { pl: 'twitter', name: '投稿（横）', w: 1200, h: 675, vt: 'image' },
+      { pl: 'twitter', name: '投稿（正方形）', w: 1080, h: 1080, vt: 'image' },
+      { pl: 'instagram', name: '投稿（正方形）', w: 1080, h: 1080, vt: 'image' },
+      { pl: 'instagram', name: 'ストーリー', w: 1080, h: 1920, vt: 'image' },
+      { pl: 'instagram', name: '投稿（横）', w: 1080, h: 566, vt: 'image' },
+      { pl: 'instagram', name: '投稿（縦）', w: 1080, h: 1350, vt: 'image' },
+      { pl: 'instagram', name: 'リール', w: 1080, h: 1920, vt: 'video', note: '9:16' },
+      { pl: 'facebook', name: 'フィード（正方形）', w: 1080, h: 1080, vt: 'image' },
+      { pl: 'facebook', name: 'フィード（縦長）', w: 1080, h: 1350, vt: 'image' },
+      { pl: 'facebook', name: 'ストーリーズ/リール', w: 1080, h: 1920, vt: 'video', note: '9:16' },
+    ];
+    const PLABELS = { booth: 'BOOTH', note: 'note', youtube: 'YouTube', tiktok: 'TikTok', twitter: 'Twitter/X', instagram: 'Instagram', facebook: 'Facebook' };
+
+    // ===== 状態 =====
+    let fileType = null, isHeic = false, currentFile = null;
+    let origImg = null, dlBlob = null, lastDlUrl = null;
+    let targetW = 0, targetH = 0;
+    let videoFmt = 'mp4';
+
+    // ===== DOM =====
+    const G = id => document.getElementById(id);
+    const fi = G('fi'), dz = G('dz');
+    const origC = G('origC'), origV = G('origV');
+    const resC = G('resC'), resV = G('resV');
+    const origI = G('origI'), resI = G('resI');
+    const cw = G('cw'), ch = G('ch');
+    const fmtSel = G('fmt'), qualSel = G('qual');
+    const targStart = G('targStart'), targEnd = G('targEnd');
+    const ka = G('ka'), fb = G('fb'), bgc = G('bgc');
+    const dlBtn = G('dlBtn'), resetBtn = G('resetBtn');
+    const sbar = G('sbar'), pgwrap = G('pgwrap'), pgbar = G('pgbar'), pglbl = G('pglbl');
+    const heicFmt = G('heicFmt');
+
+    // WebCodecs非対応なら MP4 ボタン無効
+    if (!hasWebCodecs) {
+      G('vbMp4').disabled = true;
+      videoFmt = 'webm';
+      G('vbWebm').classList.add('active');
+      G('vbMp4').classList.remove('active');
+      G('mp4Warn').style.display = 'block';
+    }
+
+    // ===== イベント =====
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+    fi.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+    fmtSel.addEventListener('change', () => {
+      G('qualGrp').style.display = ['image/jpeg', 'image/webp'].includes(fmtSel.value) ? 'block' : 'none';
+      updatePreview();
+    });
+    [cw, ch, ka, fb, bgc, qualSel, heicFmt].forEach(el => el && el.addEventListener('change', updatePreview));
+    [targStart, targEnd].forEach(el => el && el.addEventListener('input', () => {
+      if (fileType === 'video') updatePreview();
+    }));
+
+    document.querySelectorAll('.vb').forEach(b => b.addEventListener('click', () => {
+      if (b.disabled) return;
+      document.querySelectorAll('.vb').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      videoFmt = b.dataset.vf;
+      updatePreview();
+    }));
+
+    G('platTabs').addEventListener('click', e => {
+      const btn = e.target.closest('.tab');
+      if (!btn) return;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderPresets(btn.dataset.p);
+    });
+
+    // ===== ファイル処理 =====
+    async function handleFile(f) {
+      currentFile = f;
+      const nm = f.name.toLowerCase();
+      isHeic = nm.endsWith('.heic') || nm.endsWith('.heif') || f.type === 'image/heic' || f.type === 'image/heif';
+      const isVid = f.type.startsWith('video/') || nm.endsWith('.mov') || nm.endsWith('.mp4') || nm.endsWith('.webm');
+      fileType = isVid ? 'video' : 'image';
+
+      G('secPreset').style.display = 'block';
+      G('secOpts').style.display = 'block';
+      G('secPrev').style.display = 'block';
+      dlBtn.disabled = true; dlBtn.textContent = '⬇ ダウンロード'; dlBlob = null;
+
+      G('heicNotice').className = 'notice orange' + (isHeic ? ' show' : '');
+      G('heicFmtSec').style.display = isHeic ? 'block' : 'none';
+      G('vfmtSec').style.display = fileType === 'video' ? 'block' : 'none';
+      G('imgFmtGrp').style.display = (fileType === 'image' && !isHeic) ? 'block' : 'none';
+      G('trimGrp').style.display = fileType === 'video' ? 'block' : 'none';
+      G('errNotice').className = 'notice red';
+
+      if (fileType === 'image') {
+        await loadImg(f);
+      } else {
+        await loadVid(f);
+      }
+      renderPresets('all');
+      updatePreview();
+    }
+
+    // ===== 画像読み込み（HEIC はブラウザネイティブデコード）=====
+    async function loadImg(f) {
+      showStatus('読み込み中...', 'proc');
+      const url = URL.createObjectURL(f);
+      origImg = new Image();
+
+      try {
+        await new Promise((resolve, reject) => {
+          origImg.onload = resolve;
+          origImg.onerror = reject;
+          origImg.src = url;
+        });
+      } catch (e) {
+        // HEIC をブラウザが直接デコードできない場合
+        if (isHeic) {
+          showErr('このブラウザはHEICをネイティブ対応していません。\nChromeまたはSafariの最新版をご使用ください。\n（Chrome 105+ / Safari は対応済み）');
+        } else {
+          showErr('画像の読み込みに失敗しました: ' + e.message);
+        }
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      origC.style.display = 'block'; origV.style.display = 'none';
+      const ctx = origC.getContext('2d');
+      origC.width = origImg.naturalWidth; origC.height = origImg.naturalHeight;
+      ctx.drawImage(origImg, 0, 0);
+      origI.textContent = `${origImg.naturalWidth} × ${origImg.naturalHeight} px\n${fmtSize(f.size)}`;
+
+      if (!isHeic) {
+        fmtSel.value = f.type === 'image/jpeg' ? 'image/jpeg' : f.type === 'image/webp' ? 'image/webp' : 'image/png';
+      }
+      showStatus('', '');
+    }
+
+    async function loadVid(f) {
+      const url = URL.createObjectURL(f);
+      origV.src = url; origV.style.display = 'block'; origC.style.display = 'none';
+      await new Promise(r => { origV.onloadedmetadata = r; });
+      origI.textContent = `${origV.videoWidth} × ${origV.videoHeight} px\n${fmtSize(f.size)} / ${fmtDur(origV.duration)}`;
+      targStart.value = 0;
+      targEnd.value = origV.duration;
+    }
+
+    // ===== プリセット =====
+    function renderPresets(platform) {
+      const list = platform === 'all' ? PRESETS : PRESETS.filter(p => p.pl === platform);
+      const grid = G('presetGrid'); grid.innerHTML = '';
+      list.forEach(p => {
+        if (fileType === 'video' && p.vt === 'image') return;
+        if (fileType === 'image' && p.vt === 'video') return;
+        const d = document.createElement('div');
+        d.className = 'pc' + (p.vt === 'video' ? ' vid' : '');
+        d.innerHTML = `<div class="pp">${PLABELS[p.pl]}</div><div class="pn">${p.name}</div><div class="ps">${p.w} × ${p.h}</div><span class="pb ${p.vt === 'video' ? 'v' : ''}">${p.note || p.vt}</span>`;
+        d.addEventListener('click', () => {
+          document.querySelectorAll('.pc').forEach(c => c.classList.remove('sel'));
+          d.classList.add('sel');
+          cw.value = p.w; ch.value = p.h;
+          updatePreview();
+        });
+        grid.appendChild(d);
+      });
+    }
+
+    // ===== プレビュー更新 =====
+    function updatePreview() {
+      if (!currentFile || !origImg && fileType === 'image') return;
+      const w = parseInt(cw.value) || (origImg ? origImg.naturalWidth : 0);
+      const h = parseInt(ch.value) || (origImg ? origImg.naturalHeight : 0);
+      if (!w || !h) return;
+      targetW = w; targetH = h;
+
+      if (fileType === 'image') {
+        drawResized(w, h);
+      } else {
+        resV.src = origV.src; resV.style.display = 'block'; resC.style.display = 'none';
+        const start = parseFloat(targStart.value) || 0;
+        const end = parseFloat(targEnd.value) || origV.duration;
+        const duration = end - start;
+        resI.textContent = `変換後: ${w} × ${h} px\n出力: ${videoFmt.toUpperCase()}\nトリム: ${fmtDur(start)} 〜 ${fmtDur(end)} (${fmtDur(duration)})\n▶「変換してダウンロード」を押してください`;
+        dlBtn.disabled = false;
+        dlBtn.textContent = '⬇ 変換してダウンロード';
+        dlBtn.onclick = () => videoFmt === 'mp4' ? doMP4(w, h, start, end) : doWebM(w, h, start, end);
+      }
+    }
+
+    // ===== 画像リサイズ =====
+    function drawResized(w, h) {
+      resC.style.display = 'block'; resV.style.display = 'none';
+      resC.width = w; resC.height = h;
+      const ctx = resC.getContext('2d');
+      if (fb.checked) { ctx.fillStyle = bgc.value; ctx.fillRect(0, 0, w, h); }
+      else ctx.clearRect(0, 0, w, h);
+
+      if (ka.checked) {
+        const iw = origImg.naturalWidth, ih = origImg.naturalHeight;
+        const s = Math.min(w / iw, h / ih);
+        ctx.drawImage(origImg, (w - iw * s) / 2, (h - ih * s) / 2, iw * s, ih * s);
+      } else {
+        ctx.drawImage(origImg, 0, 0, w, h);
+      }
+
+      const f = isHeic ? heicFmt.value : fmtSel.value;
+      const q = parseFloat(qualSel.value);
+      resC.toBlob(blob => {
+        dlBlob = blob;
+        resI.textContent = `変換後: ${w} × ${h} px\n${fmtSize(blob.size)}`;
+        dlBtn.disabled = false;
+        dlBtn.textContent = '⬇ ダウンロード';
+        dlBtn.onclick = dlImg;
+        showStatus('', '');
+      }, f, q);
+    }
+
+    function dlImg() {
+      if (!dlBlob) return;
+      const f = isHeic ? heicFmt.value : fmtSel.value;
+      const ext = f.split('/')[1].replace('jpeg', 'jpg');
+      triggerDL(URL.createObjectURL(dlBlob), `resized_${targetW}x${targetH}.${ext}`);
+      showStatus(`✓ resized_${targetW}x${targetH}.${ext} をダウンロードしました`, 'done');
+    }
+
+    // ===== 動画 WebM =====
+    async function doWebM(w, h, start, end) {
+      dlBtn.disabled = true;
+      showStatus('WebM エンコード中...', 'proc'); startProg();
+      const video = origV;
+      await seekWait(video, start); // currentTimeの設定をseekWait内に隠蔽し、安全に待つ
+      const off = mkCanvas(w, h), ctx = off.getContext('2d');
+      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+      const rec = new MediaRecorder(off.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8e6 });
+      const chunks = [];
+      rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+      rec.start();
+      video.muted = true; video.play();
+      const dur = end - start;
+      function draw() {
+        if (video.currentTime >= end || video.ended || video.paused) { rec.stop(); return; }
+        drawF(ctx, video, w, h);
+        setProg((video.currentTime - start) / dur, `${~~(video.currentTime - start)}s / ${~~dur}s`);
+        requestAnimationFrame(draw);
+      }
+      video.onended = () => rec.stop();
+      draw();
+      rec.onstop = () => finishVid(new Blob(chunks, { type: 'video/webm' }), w, h, 'webm');
+    }
+
+    // ===== 動画 MP4 (WebCodecs + mp4-muxer) =====
+    async function doMP4(w, h, start, end) {
+      // H.264 エンコーダーは幅と高さが偶数である必要があるため切り捨て
+      w = Math.floor(w / 2) * 2;
+      h = Math.floor(h / 2) * 2;
+
+      if (!hasWebCodecs) { showErr('MP4エンコード非対応。WebMをお使いください。'); dlBtn.disabled = false; return; }
+
+      dlBtn.disabled = true;
+      showStatus('mp4-muxer / 音声解析 準備中...', 'proc');
+
+      const lib = await loadMp4Muxer();
+      if (!lib) {
+        showErr('mp4-muxer の読み込みに失敗しました。WebMをお試しください。');
+        dlBtn.disabled = false; return;
+      }
+
+      showStatus('MP4 エンコード中... 音声がある場合は解析に時間がかかります', 'proc'); startProg();
+
+      const video = origV, fps = 30;
+      const duration = end - start;
+      const totalFrames = Math.ceil(duration * fps);
+
+      // --- 音声トラックの抽出 ---
+      let audioBuffer = null;
+      let hasAudio = false;
+      try {
+        const audioRes = await fetch(video.src);
+        const arrayBuf = await audioRes.arrayBuffer();
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        audioBuffer = await actx.decodeAudioData(arrayBuf);
+        hasAudio = true;
+      } catch (e) {
+        console.warn('Audio decoding failed or no audio:', e);
+      }
+
+      // コーデックサポート確認（解像度に合わせて適切なプロファイルを探索）
+      const codecs = [
+        'avc1.42E02A', // Constrained Baseline Profile, Level 4.2 (up to 1080p60)
+        'avc1.4D002A', // Main Profile, Level 4.2
+        'avc1.640028', // High Profile, Level 4.0
+        'avc1.42001f', // Baseline Profile, Level 3.1 (up to 720p30)
+      ];
+      let targetCodec = null;
+      for (const c of codecs) {
+        try {
+          const r = await VideoEncoder.isConfigSupported({ codec: c, width: w, height: h, bitrate: 8e6, framerate: fps });
+          if (r.supported) { targetCodec = c; break; }
+        } catch (e) { }
+      }
+      if (!targetCodec) { showErr('指定サイズでのH.264エンコード非対応。WebMをお試しください。'); dlBtn.disabled = false; return; }
+
+      let muxer, encoder, audioEncoder;
+      try {
+        const muxerOpts = {
+          target: new lib.ArrayBufferTarget(),
+          video: { codec: 'avc', width: w, height: h },
+          fastStart: 'in-memory',
+        };
+        if (hasAudio) {
+          muxerOpts.audio = {
+            codec: 'aac',
+            sampleRate: audioBuffer.sampleRate,
+            numberOfChannels: audioBuffer.numberOfChannels
+          };
+        }
+        muxer = new lib.Muxer(muxerOpts);
+        encoder = new VideoEncoder({
+          output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+          error: e => showErr('エンコードエラー: ' + e.message),
+        });
+        encoder.configure({ codec: targetCodec, width: w, height: h, bitrate: 8e6, framerate: fps });
+
+        if (hasAudio) {
+          audioEncoder = new AudioEncoder({
+            output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+            error: e => console.warn('AudioEncoder error:', e)
+          });
+          audioEncoder.configure({
+            codec: 'mp4a.40.2',
+            sampleRate: audioBuffer.sampleRate,
+            numberOfChannels: audioBuffer.numberOfChannels,
+            bitrate: 128000
+          });
+        }
+      } catch (e) {
+        showErr('MP4初期化失敗: ' + e.message); dlBtn.disabled = false; return;
+      }
+
+      const off = mkCanvas(w, h), ctx = off.getContext('2d');
+      video.muted = true;
+
+      // 音声データ分割用の設定
+      const audioSampleRate = hasAudio ? audioBuffer.sampleRate : 0;
+      let lastAudioTime = start;
+      for (let i = 0; i < totalFrames; i++) {
+        const t = start + (i / fps);
+        if (t >= end) break;
+        await seekWait(video, t);
+        drawF(ctx, video, w, h);
+        const frame = new VideoFrame(off, { timestamp: Math.round((t - start) * 1e6) });
+        encoder.encode(frame, { keyFrame: i % (fps * 2) === 0 });
+        frame.close();
+
+        // 映像フレームに同期して音声を切り出してエンコード
+        if (hasAudio) {
+          const nextAudioTime = Math.min(t, audioBuffer.duration);
+          if (nextAudioTime > lastAudioTime) {
+            const startIdx = Math.floor(lastAudioTime * audioSampleRate);
+            const endIdx = Math.floor(nextAudioTime * audioSampleRate);
+            const frames = endIdx - startIdx;
+            if (frames > 0) {
+              const audioData = new AudioData({
+                format: 'f32-planar',
+                sampleRate: audioSampleRate,
+                numberOfFrames: frames,
+                numberOfChannels: audioBuffer.numberOfChannels,
+                timestamp: Math.round((lastAudioTime - start) * 1e6),
+                data: (() => {
+                  const arr = new Float32Array(frames * audioBuffer.numberOfChannels);
+                  for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                    const channelData = audioBuffer.getChannelData(c);
+                    arr.set(channelData.subarray(startIdx, endIdx), c * frames);
+                  }
+                  return arr;
+                })()
+              });
+              audioEncoder.encode(audioData);
+              audioData.close();
+            }
+            lastAudioTime = nextAudioTime;
+          }
+        }
+
+        setProg(i / totalFrames, `フレーム ${i}/${totalFrames} (${~~(i / totalFrames * 100)}%)`);
+        if (i % 15 === 0) await tick();
+      }
+
+      // 終了時間を超えた分の余りの音声をプッシュ
+      if (hasAudio && lastAudioTime < Math.min(end, audioBuffer.duration)) {
+        const nextAudioTime = Math.min(end, audioBuffer.duration);
+        const startIdx = Math.floor(lastAudioTime * audioSampleRate);
+        const endIdx = Math.floor(nextAudioTime * audioSampleRate);
+        const frames = endIdx - startIdx;
+        if (frames > 0) {
+          const audioData = new AudioData({
+            format: 'f32-planar',
+            sampleRate: audioSampleRate,
+            numberOfFrames: frames,
+            numberOfChannels: audioBuffer.numberOfChannels,
+            timestamp: Math.round((lastAudioTime - start) * 1e6),
+            data: (() => {
+              const arr = new Float32Array(frames * audioBuffer.numberOfChannels);
+              for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                const channelData = audioBuffer.getChannelData(c);
+                arr.set(channelData.subarray(startIdx, endIdx), c * frames);
+              }
+              return arr;
+            })()
+          });
+          audioEncoder.encode(audioData);
+          audioData.close();
+        }
+      }
+
+      await encoder.flush();
+      if (hasAudio) await audioEncoder.flush();
+      muxer.finalize();
+      finishVid(new Blob([muxer.target.buffer], { type: 'video/mp4' }), w, h, 'mp4');
+    }
+
+    function finishVid(blob, w, h, ext) {
+      setProg(1, '完了');
+      if (lastDlUrl) URL.revokeObjectURL(lastDlUrl);
+      lastDlUrl = URL.createObjectURL(blob);
+      resV.src = lastDlUrl; resV.style.display = 'block'; resC.style.display = 'none';
+      resI.textContent = `変換後: ${w} × ${h} px\n${fmtSize(blob.size)}`;
+      const fname = `resized_${w}x${h}.${ext}`;
+      triggerDL(lastDlUrl, fname);
+      dlBtn.disabled = false; dlBtn.textContent = '⬇ 再ダウンロード';
+      dlBtn.onclick = () => triggerDL(lastDlUrl, fname);
+      showStatus(`✓ ${fname} をダウンロードしました`, 'done');
+      pgwrap.classList.remove('show');
+    }
+
+    // ===== ユーティリティ =====
+    function drawF(ctx, video, w, h) {
+      ctx.fillStyle = bgc.value; ctx.fillRect(0, 0, w, h);
+      if (ka.checked) {
+        const vw = video.videoWidth, vh = video.videoHeight, s = Math.min(w / vw, h / vh);
+        ctx.drawImage(video, (w - vw * s) / 2, (h - vh * s) / 2, vw * s, vh * s);
+      } else { ctx.drawImage(video, 0, 0, w, h); }
+    }
+    function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+    function seekWait(v, t) {
+      return new Promise(r => {
+        if (Math.abs(v.currentTime - t) < 0.01) return r();
+        const handle = () => { v.removeEventListener('seeked', handle); r(); };
+        v.addEventListener('seeked', handle, { once: true });
+        v.currentTime = t;
+      });
+    }
+    function tick() { return new Promise(r => setTimeout(r, 0)); }
+    function triggerDL(url, name) { const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
+    function fmtSize(b) { return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1024).toFixed(0) + ' KB'; }
+    function fmtDur(s) { return `${~~(s / 60)}:${String(~~(s % 60)).padStart(2, '0')}`; }
+    function showStatus(msg, type) {
+      sbar.textContent = msg;
+      sbar.className = 'sbar' + (msg ? ' show' : '') + (type ? ' ' + type : '');
+    }
+    function showErr(msg) {
+      const n = G('errNotice'); n.textContent = '⚠ ' + msg; n.className = 'notice red show';
+      showStatus(msg.split('\n')[0], 'err');
+    }
+    function startProg() { pgwrap.classList.add('show'); pgbar.value = 0; }
+    function setProg(r, label) { pgbar.value = Math.round(r * 100); pglbl.textContent = label; }
+
+    // ===== リセット =====
+    resetBtn.addEventListener('click', () => {
+      currentFile = null; fileType = null; isHeic = false; origImg = null; dlBlob = null; fi.value = '';
+      origV.src = ''; origV.style.display = 'none'; origC.style.display = 'none';
+      resV.src = ''; resV.style.display = 'none'; resC.style.display = 'none';
+      G('secPreset').style.display = 'none'; G('secOpts').style.display = 'none'; G('secPrev').style.display = 'none';
+      cw.value = ''; ch.value = ''; targStart.value = ''; targEnd.value = '';
+      G('heicNotice').className = 'notice orange'; G('errNotice').className = 'notice red';
+      dlBtn.disabled = true; dlBtn.textContent = '⬇ ダウンロード';
+      showStatus('', ''); pgwrap.classList.remove('show');
+    });
+
+    // ===== ページ離脱防止 =====
+    window.addEventListener('beforeunload', (e) => {
+      if (pgwrap.classList.contains('show')) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  </script>
+</body>
+
+</html>
