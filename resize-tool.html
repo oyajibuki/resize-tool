@@ -151,12 +151,6 @@
       font-size: 11px;
     }
 
-    .tag.heic {
-      background: var(--orange-bg);
-      border-color: #e8a060;
-      color: var(--orange);
-    }
-
     /* Notice */
     .notice {
       border-radius: 6px;
@@ -169,6 +163,12 @@
 
     .notice.show {
       display: block;
+    }
+
+    .notice.plain {
+      background: var(--al);
+      border: 1.5px solid var(--border-s);
+      color: var(--text);
     }
 
     .notice.orange {
@@ -594,11 +594,11 @@
         <div class="dz-sub">
           <span class="tag">PNG</span><span class="tag">JPG</span><span class="tag">WebP</span><span
             class="tag">GIF</span>
-          <span class="tag heic">📱 HEIC / HEIF（iPhone）</span>
+          <span class="tag">HEIC</span><span class="tag">HEIF</span>
           <span class="tag">MP4</span><span class="tag">MOV</span><span class="tag">WebM</span>
         </div>
       </div>
-      <div class="notice orange" id="heicNotice">📱 iPhoneの写真（HEIC/HEIF）を検出 — JPG または PNG に変換します</div>
+      <div class="notice plain" id="heicNotice">HEIC / HEIF 画像を検出しました — JPG または PNG に変換します</div>
       <div class="notice red" id="errNotice"></div>
     </div>
 
@@ -607,6 +607,8 @@
       <div class="slabel">02 — 用途を選択（任意）</div>
       <div class="tabs" id="platTabs">
         <button class="tab active" data-p="all">すべて</button>
+        <button class="tab" data-p="lineworks">LINE WORKS</button>
+        <button class="tab" data-p="line">LINE</button>
         <button class="tab" data-p="booth">BOOTH</button>
         <button class="tab" data-p="note">note</button>
         <button class="tab" data-p="youtube">YouTube</button>
@@ -614,6 +616,7 @@
         <button class="tab" data-p="twitter">Twitter/X</button>
         <button class="tab" data-p="instagram">Instagram</button>
         <button class="tab" data-p="facebook">Facebook</button>
+        <button class="tab" data-p="pinterest">Pinterest</button>
       </div>
       <div class="pgrid" id="presetGrid"></div>
     </div>
@@ -754,6 +757,10 @@
 
     // ===== プリセット =====
     const PRESETS = [
+      { pl: 'lineworks', name: 'プロフィール画像', w: 640, h: 640, vt: 'image', note: '3MB以下推奨' },
+      { pl: 'lineworks', name: '背景・カバー画像', w: 1000, h: 635, vt: 'image' },
+      { pl: 'line', name: 'アイコン', w: 800, h: 800, vt: 'image' },
+      { pl: 'line', name: '背景', w: 720, h: 1280, vt: 'image' },
       { pl: 'booth', name: 'アイコン', w: 600, h: 600, vt: 'image' },
       { pl: 'booth', name: 'バナー', w: 1500, h: 400, vt: 'image' },
       { pl: 'booth', name: '商品画像', w: 1200, h: 1200, vt: 'image' },
@@ -779,8 +786,10 @@
       { pl: 'facebook', name: 'フィード（正方形）', w: 1080, h: 1080, vt: 'image' },
       { pl: 'facebook', name: 'フィード（縦長）', w: 1080, h: 1350, vt: 'image' },
       { pl: 'facebook', name: 'ストーリーズ/リール', w: 1080, h: 1920, vt: 'video', note: '9:16' },
+      { pl: 'pinterest', name: 'ピン（標準）', w: 1000, h: 1500, vt: 'image', note: '2:3' },
+      { pl: 'pinterest', name: 'アイコン', w: 165, h: 165, vt: 'image' },
     ];
-    const PLABELS = { booth: 'BOOTH', note: 'note', youtube: 'YouTube', tiktok: 'TikTok', twitter: 'Twitter/X', instagram: 'Instagram', facebook: 'Facebook' };
+    const PLABELS = { lineworks: 'LINE WORKS', line: 'LINE', booth: 'BOOTH', note: 'note', youtube: 'YouTube', tiktok: 'TikTok', twitter: 'Twitter/X', instagram: 'Instagram', facebook: 'Facebook', pinterest: 'Pinterest' };
 
     // ===== 状態 =====
     let fileType = null, isHeic = false, currentFile = null;
