@@ -572,6 +572,90 @@
       border-top: 1px solid var(--border);
       margin: 12px 0;
     }
+
+    /* Editor */
+    .editor-section {
+      display: none;
+      margin-top: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    .editor-section.show {
+      display: block;
+    }
+
+    .editor-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .editor-toolbar .zoom-display {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 60px;
+    }
+
+    .editor-toolbar .btn-tool {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .1s;
+    }
+
+    .editor-toolbar .btn-tool:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    .editor-hint {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .editor-canvas-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      background:
+        repeating-conic-gradient(#e0ddd6 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+    }
+
+    .editor-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+      object-fit: contain;
+      cursor: grab;
+    }
+
+    .editor-canvas-wrap canvas.dragging {
+      cursor: grabbing;
+    }
   </style>
 </head>
 
@@ -709,6 +793,29 @@
           <div class="pinfo" id="resI"></div>
         </div>
       </div>
+
+      <!-- 画像編集エリア -->
+      <div class="editor-section" id="editorSection">
+        <div class="editor-label">画像を調整（マウスで操作）</div>
+        <div class="editor-toolbar">
+          <span class="zoom-display" id="zoomDisplay">100%</span>
+          <button class="btn-tool" id="zoomInBtn">＋ 拡大</button>
+          <button class="btn-tool" id="zoomOutBtn">－ 縮小</button>
+          <button class="btn-tool" id="fitBtn">フィット</button>
+          <button class="btn-tool" id="editResetBtn">リセット</button>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px;">ガイド線</span>
+          <input type="color" id="rulerColor" value="#cccc00"
+            style="width:28px;height:24px;border:1.5px solid var(--border);border-radius:3px;padding:1px;cursor:pointer;">
+          <button class="btn-tool" id="rulerToggle">非表示</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span class="editor-hint">🖱 ホイール: 拡大縮小 / ドラッグ: 位置移動</span>
+        </div>
+        <div class="editor-canvas-wrap" id="editorWrap">
+          <canvas id="editCanvas"></canvas>
+        </div>
+      </div>
+
       <div class="sbar" id="sbar"></div>
       <div class="pgwrap" id="pgwrap">
         <div class="pglbl" id="pglbl">処理中...</div>
@@ -796,6 +903,10 @@
     let origImg = null, dlBlob = null, lastDlUrl = null;
     let targetW = 0, targetH = 0;
     let videoFmt = 'mp4';
+
+    // 画像編集状態
+    let editScale = 1, editOffX = 0, editOffY = 0;
+    let isDragging = false, dragStartX = 0, dragStartY = 0, dragOffX = 0, dragOffY = 0;
 
     // ===== DOM =====
     const G = id => document.getElementById(id);
@@ -982,24 +1093,219 @@
         ctx.drawImage(origImg, 0, 0, w, h);
       }
 
-      const f = isHeic ? heicFmt.value : fmtSel.value;
-      const q = parseFloat(qualSel.value);
-      resC.toBlob(blob => {
-        dlBlob = blob;
-        resI.textContent = `変換後: ${w} × ${h} px\n${fmtSize(blob.size)}`;
-        dlBtn.disabled = false;
-        dlBtn.textContent = '⬇ ダウンロード';
-        dlBtn.onclick = dlImg;
-        showStatus('', '');
-      }, f, q);
+      // 編集エディターを初期化して表示
+      editScale = 1; editOffX = 0; editOffY = 0;
+      G('editorSection').classList.add('show');
+      drawEditCanvas();
+
+      resI.textContent = `変換後: ${w} × ${h} px\n画像を調整してからダウンロードできます`;
+      dlBtn.disabled = false;
+      dlBtn.textContent = '⬇ ダウンロード';
+      dlBtn.onclick = dlImg;
+      showStatus('', '');
     }
 
+    // ===== 編集キャンバス描画 =====
+    function drawEditCanvas() {
+      const ec = G('editCanvas');
+      const w = targetW, h = targetH;
+      ec.width = w; ec.height = h;
+      const ctx = ec.getContext('2d');
+
+      // 背景
+      if (fb.checked) { ctx.fillStyle = bgc.value; ctx.fillRect(0, 0, w, h); }
+      else ctx.clearRect(0, 0, w, h);
+
+      // 画像を拡大率・オフセット付きで描画
+      const iw = origImg.naturalWidth, ih = origImg.naturalHeight;
+      let dw, dh, dx, dy;
+      if (ka.checked) {
+        const s = Math.min(w / iw, h / ih) * editScale;
+        dw = iw * s; dh = ih * s;
+        dx = (w - dw) / 2 + editOffX;
+        dy = (h - dh) / 2 + editOffY;
+      } else {
+        dw = w * editScale; dh = h * editScale;
+        dx = (w - dw) / 2 + editOffX;
+        dy = (h - dh) / 2 + editOffY;
+      }
+      ctx.drawImage(origImg, dx, dy, dw, dh);
+
+      // ルーラーを描画（薄い目盛り線）
+      drawRuler(ctx, w, h);
+
+      // ズーム表示更新
+      G('zoomDisplay').textContent = `${Math.round(editScale * 100)}%`;
+    }
+
+    let rulerVisible = true;
+
+    function drawRuler(ctx, w, h) {
+      if (!rulerVisible) return;
+      ctx.save();
+
+      const color = G('rulerColor').value;
+      // hex → rgba (透過度0.35)
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      const lineColor = `rgba(${r},${g},${b},0.35)`;
+      const textColor = `rgba(${r},${g},${b},0.6)`;
+
+      const step = 50;
+      const major = 100;
+
+      // グリッド線（画像全体に被せる）
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 0.5;
+      for (let x = step; x < w; x += step) {
+        ctx.lineWidth = (x % major === 0) ? 0.8 : 0.4;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = step; y < h; y += step) {
+        ctx.lineWidth = (y % major === 0) ? 0.8 : 0.4;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // ラベル（100px毎）
+      ctx.fillStyle = textColor;
+      ctx.font = '9px monospace';
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      for (let x = major; x < w; x += major) {
+        ctx.fillText(x, x + 2, 2);
+      }
+      for (let y = major; y < h; y += major) {
+        ctx.fillText(y, 2, y + 2);
+      }
+
+      ctx.restore();
+    }
+
+    // ===== 編集キャンバス操作 =====
+    (function setupEditor() {
+      const ec = G('editCanvas');
+      const wrap = G('editorWrap');
+
+      // マウスホイール: 拡大・縮小
+      wrap.addEventListener('wheel', e => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        editScale = Math.max(0.1, Math.min(10, editScale + delta));
+        drawEditCanvas();
+      }, { passive: false });
+
+      // マウスドラッグ: 位置移動
+      ec.addEventListener('mousedown', e => {
+        isDragging = true;
+        ec.classList.add('dragging');
+        dragStartX = e.clientX; dragStartY = e.clientY;
+        dragOffX = editOffX; dragOffY = editOffY;
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const rect = ec.getBoundingClientRect();
+        const scaleRatio = ec.width / rect.width;
+        editOffX = dragOffX + (e.clientX - dragStartX) * scaleRatio;
+        editOffY = dragOffY + (e.clientY - dragStartY) * scaleRatio;
+        drawEditCanvas();
+      });
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          G('editCanvas').classList.remove('dragging');
+        }
+      });
+
+      // タッチ対応
+      ec.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          const t = e.touches[0];
+          dragStartX = t.clientX; dragStartY = t.clientY;
+          dragOffX = editOffX; dragOffY = editOffY;
+          e.preventDefault();
+        }
+      }, { passive: false });
+      document.addEventListener('touchmove', e => {
+        if (!isDragging || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        const rect = ec.getBoundingClientRect();
+        const scaleRatio = ec.width / rect.width;
+        editOffX = dragOffX + (t.clientX - dragStartX) * scaleRatio;
+        editOffY = dragOffY + (t.clientY - dragStartY) * scaleRatio;
+        drawEditCanvas();
+      }, { passive: false });
+      document.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+
+      // ツールバーボタン
+      G('zoomInBtn').addEventListener('click', () => {
+        editScale = Math.min(10, editScale + 0.2);
+        drawEditCanvas();
+      });
+      G('zoomOutBtn').addEventListener('click', () => {
+        editScale = Math.max(0.1, editScale - 0.2);
+        drawEditCanvas();
+      });
+      G('fitBtn').addEventListener('click', () => {
+        editScale = 1; editOffX = 0; editOffY = 0;
+        drawEditCanvas();
+      });
+      G('editResetBtn').addEventListener('click', () => {
+        editScale = 1; editOffX = 0; editOffY = 0;
+        drawEditCanvas();
+      });
+      G('rulerColor').addEventListener('input', () => {
+        drawEditCanvas();
+      });
+      G('rulerToggle').addEventListener('click', () => {
+        rulerVisible = !rulerVisible;
+        G('rulerToggle').textContent = rulerVisible ? '非表示' : '表示';
+        drawEditCanvas();
+      });
+    })();
+
     function dlImg() {
-      if (!dlBlob) return;
+      // ルーラーなしの最終画像を生成してダウンロード
+      const w = targetW, h = targetH;
+      const off = mkCanvas(w, h);
+      const ctx = off.getContext('2d');
+
+      if (fb.checked) { ctx.fillStyle = bgc.value; ctx.fillRect(0, 0, w, h); }
+      else ctx.clearRect(0, 0, w, h);
+
+      const iw = origImg.naturalWidth, ih = origImg.naturalHeight;
+      let dw, dh, dx, dy;
+      if (ka.checked) {
+        const s = Math.min(w / iw, h / ih) * editScale;
+        dw = iw * s; dh = ih * s;
+        dx = (w - dw) / 2 + editOffX;
+        dy = (h - dh) / 2 + editOffY;
+      } else {
+        dw = w * editScale; dh = h * editScale;
+        dx = (w - dw) / 2 + editOffX;
+        dy = (h - dh) / 2 + editOffY;
+      }
+      ctx.drawImage(origImg, dx, dy, dw, dh);
+
       const f = isHeic ? heicFmt.value : fmtSel.value;
-      const ext = f.split('/')[1].replace('jpeg', 'jpg');
-      triggerDL(URL.createObjectURL(dlBlob), `resized_${targetW}x${targetH}.${ext}`);
-      showStatus(`✓ resized_${targetW}x${targetH}.${ext} をダウンロードしました`, 'done');
+      const q = parseFloat(qualSel.value);
+      off.toBlob(blob => {
+        if (!blob) return;
+        const ext = f.split('/')[1].replace('jpeg', 'jpg');
+        triggerDL(URL.createObjectURL(blob), `resized_${targetW}x${targetH}.${ext}`);
+        resI.textContent = `変換後: ${targetW} × ${targetH} px\n${fmtSize(blob.size)}`;
+        showStatus(`✓ resized_${targetW}x${targetH}.${ext} をダウンロードしました`, 'done');
+      }, f, q);
     }
 
     // ===== 動画 WebM =====
@@ -1250,6 +1556,8 @@
       origV.src = ''; origV.style.display = 'none'; origC.style.display = 'none';
       resV.src = ''; resV.style.display = 'none'; resC.style.display = 'none';
       G('secPreset').style.display = 'none'; G('secOpts').style.display = 'none'; G('secPrev').style.display = 'none';
+      G('editorSection').classList.remove('show');
+      editScale = 1; editOffX = 0; editOffY = 0;
       cw.value = ''; ch.value = ''; targStart.value = ''; targEnd.value = '';
       G('heicNotice').className = 'notice orange'; G('errNotice').className = 'notice red';
       dlBtn.disabled = true; dlBtn.textContent = '⬇ ダウンロード';
