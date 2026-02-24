@@ -1098,7 +1098,18 @@
       G('editorSection').classList.add('show');
       drawEditCanvas();
 
-      resI.textContent = `変換後: ${w} × ${h} px\n画像を調整してからダウンロードできます`;
+      // 推定ファイルサイズを計算して表示
+      resI.textContent = `変換後: ${w} × ${h} px\nサイズ計算中...`;
+      const estFmt = isHeic ? heicFmt.value : fmtSel.value;
+      const estQ = parseFloat(qualSel.value);
+      resC.toBlob(blob => {
+        if (blob) {
+          resI.textContent = `変換後: ${w} × ${h} px\nDLサイズ: 約 ${fmtSize(blob.size)}\n※ 画像の調整次第で若干サイズが変わります`;
+        } else {
+          resI.textContent = `変換後: ${w} × ${h} px\n画像を調整してからダウンロードできます`;
+        }
+      }, estFmt, estQ);
+
       dlBtn.disabled = false;
       dlBtn.textContent = '⬇ ダウンロード';
       dlBtn.onclick = dlImg;
