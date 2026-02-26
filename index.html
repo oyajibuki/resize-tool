@@ -693,7 +693,12 @@
         <button class="tab active" data-p="all">すべて</button>
         <button class="tab" data-p="lineworks">LINE WORKS</button>
         <button class="tab" data-p="line">LINE</button>
+        <button class="tab" data-p="linestamp">LINEスタンプ</button>
         <button class="tab" data-p="booth">BOOTH</button>
+        <button class="tab" data-p="gumroad">Gumroad</button>
+        <button class="tab" data-p="brain">Brain</button>
+        <button class="tab" data-p="stores">STORES</button>
+        <button class="tab" data-p="base">BASE</button>
         <button class="tab" data-p="note">note</button>
         <button class="tab" data-p="youtube">YouTube</button>
         <button class="tab" data-p="tiktok">TikTok</button>
@@ -868,9 +873,28 @@
       { pl: 'lineworks', name: '背景・カバー画像', w: 1000, h: 635, vt: 'image' },
       { pl: 'line', name: 'アイコン', w: 800, h: 800, vt: 'image' },
       { pl: 'line', name: '背景', w: 720, h: 1280, vt: 'image' },
+      { pl: 'linestamp', name: 'メイン画像', w: 240, h: 240, vt: 'image', note: 'PNG' },
+      { pl: 'linestamp', name: 'スタンプ画像（最大）', w: 370, h: 320, vt: 'image', note: 'PNG' },
+      { pl: 'linestamp', name: 'スタンプ画像（幅基準）', w: 370, h: 270, vt: 'image', note: 'W固定' },
+      { pl: 'linestamp', name: 'スタンプ画像（高さ基準）', w: 320, h: 320, vt: 'image', note: 'H固定' },
+      { pl: 'linestamp', name: 'タブ画像', w: 96, h: 74, vt: 'image', note: 'PNG' },
       { pl: 'booth', name: 'アイコン', w: 600, h: 600, vt: 'image' },
       { pl: 'booth', name: 'バナー', w: 1500, h: 400, vt: 'image' },
       { pl: 'booth', name: '商品画像', w: 1200, h: 1200, vt: 'image' },
+      { pl: 'gumroad', name: '商品サムネイル', w: 1280, h: 720, vt: 'image', note: '16:9' },
+      { pl: 'gumroad', name: '商品カバー', w: 1600, h: 900, vt: 'image', note: '16:9' },
+      { pl: 'gumroad', name: 'プロフィール画像', w: 500, h: 500, vt: 'image' },
+      { pl: 'brain', name: '商品サムネイル', w: 1200, h: 630, vt: 'image', note: '1.91:1' },
+      { pl: 'brain', name: 'プロフィール画像', w: 500, h: 500, vt: 'image' },
+      { pl: 'brain', name: 'カバー画像', w: 1500, h: 500, vt: 'image', note: '3:1' },
+      { pl: 'stores', name: '商品画像', w: 1200, h: 1200, vt: 'image', note: '正方形推奨' },
+      { pl: 'stores', name: 'ロゴ画像', w: 480, h: 480, vt: 'image' },
+      { pl: 'stores', name: 'カバー画像', w: 1600, h: 480, vt: 'image' },
+      { pl: 'stores', name: 'OGP画像', w: 1200, h: 630, vt: 'image', note: '1.91:1' },
+      { pl: 'base', name: '商品画像', w: 1280, h: 1280, vt: 'image', note: '正方形推奨' },
+      { pl: 'base', name: 'ロゴ画像', w: 480, h: 480, vt: 'image' },
+      { pl: 'base', name: 'カバー画像', w: 1600, h: 480, vt: 'image' },
+      { pl: 'base', name: 'OGP画像', w: 1200, h: 630, vt: 'image', note: '1.91:1' },
       { pl: 'note', name: 'アイコン', w: 500, h: 500, vt: 'image' },
       { pl: 'note', name: 'ヘッダー', w: 1280, h: 670, vt: 'image' },
       { pl: 'note', name: '記事サムネ', w: 1280, h: 670, vt: 'image' },
@@ -896,7 +920,7 @@
       { pl: 'pinterest', name: 'ピン（標準）', w: 1000, h: 1500, vt: 'image', note: '2:3' },
       { pl: 'pinterest', name: 'アイコン', w: 165, h: 165, vt: 'image' },
     ];
-    const PLABELS = { lineworks: 'LINE WORKS', line: 'LINE', booth: 'BOOTH', note: 'note', youtube: 'YouTube', tiktok: 'TikTok', twitter: 'Twitter/X', instagram: 'Instagram', facebook: 'Facebook', pinterest: 'Pinterest' };
+    const PLABELS = { lineworks: 'LINE WORKS', line: 'LINE', linestamp: 'LINEスタンプ', booth: 'BOOTH', gumroad: 'Gumroad', brain: 'Brain', stores: 'STORES', base: 'BASE', note: 'note', youtube: 'YouTube', tiktok: 'TikTok', twitter: 'Twitter/X', instagram: 'Instagram', facebook: 'Facebook', pinterest: 'Pinterest' };
 
     // ===== 状態 =====
     let fileType = null, isHeic = false, currentFile = null;
