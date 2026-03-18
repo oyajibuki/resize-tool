@@ -1019,9 +1019,17 @@
     }
 
     // ===== libheif-js を使ったHEIC→JPEG変換（heic2any失敗時のフォールバック）=====
+    let _libheifModule = null;
+    async function getLibheifModule() {
+      if (!_libheifModule) {
+        _libheifModule = await libheif(); // Emscriptenファクトリをawaitで初期化
+      }
+      return _libheifModule;
+    }
     async function decodeHEICWithLibheif(file) {
+      const lib = await getLibheifModule();
       const buffer = await file.arrayBuffer();
-      const decoder = new libheif.HeifDecoder();
+      const decoder = new lib.HeifDecoder();
       const data = decoder.decode(new Uint8Array(buffer));
       if (!data || data.length === 0) throw new Error('HEICデコード失敗');
       const image = data[0];
