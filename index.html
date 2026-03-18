@@ -657,6 +657,8 @@
       cursor: grabbing;
     }
   </style>
+  <!-- HEIC/HEIF JS decoder (fallback for browsers without native HEIC support) -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
 
 <body>
@@ -1015,27 +1017,45 @@
       updatePreview();
     }
 
-    // ===== 画像読み込み（HEIC はブラウザネイティブデコード）=====
+    // ===== 画像読み込み（HEIC: ネイティブ → heic2any フォールバック）=====
     async function loadImg(f) {
       showStatus('読み込み中...', 'proc');
-      const url = URL.createObjectURL(f);
+      let url = URL.createObjectURL(f);
       origImg = new Image();
 
+      const tryLoad = (src) => new Promise((resolve, reject) => {
+        origImg = new Image();
+        origImg.onload = resolve;
+        origImg.onerror = reject;
+        origImg.src = src;
+      });
+
       try {
-        await new Promise((resolve, reject) => {
-          origImg.onload = resolve;
-          origImg.onerror = reject;
-          origImg.src = url;
-        });
+        await tryLoad(url);
       } catch (e) {
-        // HEIC をブラウザが直接デコードできない場合
-        if (isHeic) {
-          showErr('このブラウザはHEICをネイティブ対応していません。\nChromeまたはSafariの最新版をご使用ください。\n（Chrome 105+ / Safari は対応済み）');
+        if (isHeic && typeof heic2any === 'function') {
+          // ネイティブ非対応 → heic2any でJS変換（Windows Chrome 等）
+          try {
+            showStatus('HEIC を変換中...', 'proc');
+            const converted = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92 });
+            const convertedBlob = Array.isArray(converted) ? converted[0] : converted;
+            URL.revokeObjectURL(url);
+            url = URL.createObjectURL(convertedBlob);
+            await tryLoad(url);
+          } catch (e2) {
+            showErr('HEICの変換に失敗しました: ' + (e2.message || e2));
+            URL.revokeObjectURL(url);
+            return;
+          }
+        } else if (isHeic) {
+          showErr('このブラウザはHEICに対応していません。\nSafariまたはmacOS版Chromeをお試しください。');
+          URL.revokeObjectURL(url);
+          return;
         } else {
           showErr('画像の読み込みに失敗しました: ' + e.message);
+          URL.revokeObjectURL(url);
+          return;
         }
-        URL.revokeObjectURL(url);
-        return;
       }
 
       origC.style.display = 'block'; origV.style.display = 'none';
