@@ -806,7 +806,9 @@
       <div class="editor-section" id="editorSection">
         <div class="editor-label">画像を調整（マウスで操作）</div>
         <div class="editor-toolbar">
-          <span class="zoom-display" id="zoomDisplay">100%</span>
+          <input type="number" id="zoomDisplay" value="100" min="1" max="1000" step="1"
+            style="width:70px;font-family:var(--mono);font-size:13px;font-weight:600;padding:5px 7px;border:1.5px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted);">%</span>
           <button class="btn-tool" id="zoomInBtn">＋ 拡大</button>
           <button class="btn-tool" id="zoomOutBtn">－ 縮小</button>
           <button class="btn-tool" id="fitBtn">フィット</button>
@@ -1238,7 +1240,7 @@
       drawRuler(ctx, w, h);
 
       // ズーム表示更新
-      G('zoomDisplay').textContent = `${Math.round(editScale * 100)}%`;
+      G('zoomDisplay').value = Math.round(editScale * 100);
     }
 
     let rulerVisible = true;
@@ -1299,8 +1301,8 @@
       // マウスホイール: 拡大・縮小
       wrap.addEventListener('wheel', e => {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        editScale = Math.max(0.1, Math.min(10, editScale + delta));
+        const delta = e.deltaY > 0 ? -0.01 : 0.01;
+        editScale = Math.max(0.01, Math.min(10, editScale + delta));
         drawEditCanvas();
       }, { passive: false });
 
@@ -1352,12 +1354,19 @@
 
       // ツールバーボタン
       G('zoomInBtn').addEventListener('click', () => {
-        editScale = Math.min(10, editScale + 0.2);
+        editScale = Math.min(10, editScale + 0.01);
         drawEditCanvas();
       });
       G('zoomOutBtn').addEventListener('click', () => {
-        editScale = Math.max(0.1, editScale - 0.2);
+        editScale = Math.max(0.01, editScale - 0.01);
         drawEditCanvas();
+      });
+      G('zoomDisplay').addEventListener('change', () => {
+        const v = parseInt(G('zoomDisplay').value);
+        if (!isNaN(v) && v >= 1 && v <= 1000) {
+          editScale = v / 100;
+          drawEditCanvas();
+        }
       });
       G('fitBtn').addEventListener('click', () => {
         editScale = 1; editOffX = 0; editOffY = 0;
